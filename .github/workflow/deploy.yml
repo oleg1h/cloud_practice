@@ -49,3 +49,4 @@ jobs:
         
         echo "Website is available at:"
         echo "http://$BUCKET_NAME.storage.googleapis.com"
+# End of deploy.yml
