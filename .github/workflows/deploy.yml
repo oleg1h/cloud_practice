@@ -6,7 +6,7 @@ on:
 
 env:
   BUCKET_NAME: my-website-demo-oleg
-  GCP_PROJECT: ${{ secrets.GCP_PROJECT_ID }}
+  GCP_PROJECT: halogen-shine-477208-b4
 
 jobs:
   deploy:
@@ -16,16 +16,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Setup Google Cloud SDK
-      uses: google-github-actions/setup-gcloud@v1
-      with:
-        project_id: ${{ secrets.GCP_PROJECT_ID }}
-        service_account_key: ${{ secrets.GCP_SA_KEY }}
-        export_default_credentials: true
+    - name: Setup GCloud with Service Account
+      run: |
+        echo "Setting up Google Cloud authentication..."
+        # Создаем файл с ключом сервисного аккаунта
+        echo '${{ secrets.GCP_SA_KEY }}' > gcp-key.json
+        
+        # Устанавливаем аутентификацию
+        gcloud auth activate-service-account --key-file=gcp-key.json
+        gcloud config set project $GCP_PROJECT
+        
+        # Проверяем аутентификацию
+        gcloud auth list
 
     - name: Configure bucket for website hosting
       run: |
-        echo " Configuring bucket for website hosting..."
+        echo "Configuring bucket for website hosting..."
         gsutil web set -m index.html -e 404.html gs://$BUCKET_NAME
         gsutil uniformbucketlevelaccess set off gs://$BUCKET_NAME
         gsutil iam ch allUsers:objectViewer gs://$BUCKET_NAME
@@ -33,20 +39,18 @@ jobs:
     - name: Deploy files to GCS
       run: |
         echo "Deploying files to bucket: $BUCKET_NAME"
-        
-        # Загружаем все файлы
         gcloud storage cp --recursive ./ gs://$BUCKET_NAME/
-        
-        # Устанавливаем правильные Content-Type для HTML файлов
-        gcloud storage objects update gs://$BUCKET_NAME/*.html --content-type="text/html; charset=utf-8"
-        
-        echo " Files deployed successfully!"
+        echo "Files deployed successfully!"
 
     - name: Verify deployment
       run: |
-        echo " Checking deployed files:"
+        echo "Checking deployed files:"
         gcloud storage ls gs://$BUCKET_NAME/ --recursive
-        
-        echo "Website is available at:"
+        echo ""
+        echo " Website is available at:"
         echo "http://$BUCKET_NAME.storage.googleapis.com"
-# End of deploy.yml
+
+    - name: Cleanup
+      run: |
+        rm -f gcp-key.json
+        echo "Cleanup completed"
