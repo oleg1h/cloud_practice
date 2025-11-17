@@ -7,8 +7,8 @@ on:
     branches: [ main ]
 
 env:
-  BUCKET_NAME: your-website-bucket-name
-  PROJECT_ID: your-gcp-project-id
+  BUCKET_NAME: my-website-demo-oleg
+  PROJECT_ID: halogen-shine-477208-b4
 
 jobs:
   deploy:
